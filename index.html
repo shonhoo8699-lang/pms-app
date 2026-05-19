@@ -1,13 +1,534 @@
 <!DOCTYPE html>
 <html lang="mn">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Гүйцэтгэл бүртгэл</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>Гүйцэтгэл бүртгэл</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f4f4f2;color:#1a1a1a;min-height:100vh;}
+:root{--purple:#534AB7;--purple-dk:#3C3489;--teal:#1D9E75;--teal-dk:#0F6E56;--red:#A32D2D;--border:rgba(0,0,0,0.1);--bg:#fff;--bg2:#f4f4f2;--muted:#6b6b6b;--hint:#aaa;}
+.hidden{display:none!important;}
+/* Login */
+#loginPage{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem;}
+.login-box{background:#fff;border-radius:16px;padding:2rem;width:100%;max-width:360px;border:0.5px solid var(--border);}
+.login-logo{text-align:center;margin-bottom:1.5rem;}
+.login-logo i{font-size:40px;color:var(--purple);display:block;margin-bottom:8px;}
+.login-title{font-size:18px;font-weight:600;}
+.login-sub{font-size:13px;color:var(--muted);margin-top:4px;}
+/* Topbar */
+.topbar{background:#fff;border-bottom:0.5px solid var(--border);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;}
+.topbar-left{display:flex;align-items:center;gap:8px;}
+.av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0;}
+.av-w{background:#E6F1FB;color:#0C447C;}
+.av-e{background:#E1F5EE;color:#085041;}
+.uname{font-size:13px;font-weight:600;}
+.urole{font-size:10px;color:var(--muted);}
+/* Nav */
+.bottom-nav{background:#fff;border-top:0.5px solid var(--border);display:flex;position:sticky;bottom:0;z-index:10;}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 4px 10px;font-size:10px;color:var(--hint);border:none;background:transparent;cursor:pointer;}
+.nav-item.active{color:var(--purple);}
+.nav-item i{font-size:22px;}
+/* Content */
+.page-content{padding:12px;padding-bottom:80px;}
+/* Cards */
+.card{background:#fff;border:0.5px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:10px;}
+.card-title{font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;margin-bottom:10px;}
+/* Stats */
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;}
+.stat{background:#fff;border-radius:10px;padding:10px;text-align:center;border:0.5px solid var(--border);}
+.stat-val{font-size:22px;font-weight:700;}
+.stat-lbl{font-size:10px;color:var(--muted);margin-top:2px;}
+/* Form */
+.form-row{margin-bottom:10px;}
+.form-row label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px;}
+.form-row select,.form-row input{width:100%;border:0.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:14px;background:#fff;color:#1a1a1a;appearance:none;-webkit-appearance:none;}
+.form-row input[readonly]{background:var(--bg2);color:var(--muted);}
+/* Buttons */
+.btn{width:100%;padding:12px;border-radius:10px;font-size:15px;font-weight:600;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;margin-top:4px;}
+.btn-primary{background:var(--purple);color:#fff;}
+.btn-primary:active{background:var(--purple-dk);}
+.btn-sm{padding:7px 12px;border-radius:8px;font-size:12px;font-weight:600;border:none;cursor:pointer;display:flex;align-items:center;gap:4px;}
+.btn-green{background:var(--teal);color:#fff;}
+.btn-red-outline{background:transparent;border:1px solid var(--red);color:var(--red);}
+/* Badges */
+.badge{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:600;padding:3px 8px;border-radius:20px;}
+.b-pend{background:#FAEEDA;color:#633806;}
+.b-appr{background:#EAF3DE;color:#27500A;}
+.b-rej{background:#FCEBEB;color:#791F1F;}
+.b-work{background:#E6F1FB;color:#0C447C;}
+/* Entry row */
+.entry{padding:10px 0;border-bottom:0.5px solid var(--border);}
+.entry:last-child{border-bottom:none;}
+.entry-top{display:flex;justify-content:space-between;align-items:flex-start;gap:6px;}
+.entry-name{font-size:13px;font-weight:600;}
+.entry-meta{font-size:11px;color:var(--muted);margin-top:2px;}
+/* Alert */
+.alert{padding:10px 14px;border-radius:10px;font-size:13px;margin-bottom:10px;}
+.alert-s{background:#EAF3DE;color:#27500A;}
+.alert-e{background:#FCEBEB;color:#791F1F;}
+/* Notif dot */
+.ndot{width:7px;height:7px;background:#D85A30;border-radius:50%;display:inline-block;margin-left:3px;vertical-align:middle;}
+/* Chart */
+.bar-wrap{margin-bottom:8px;}
+.bar-lbl{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:2px;}
+.bar-bg{background:var(--bg2);border-radius:3px;height:10px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:3px;background:var(--purple);}
+/* Logout btn */
+.logout-btn{background:transparent;border:none;cursor:pointer;padding:6px;color:var(--muted);}
+/* Project section on home */
+.proj-header{display:flex;align-items:center;gap:6px;margin-bottom:10px;}
+.proj-header i{font-size:16px;color:var(--purple);}
+.proj-title{font-size:13px;font-weight:600;flex:1;}
+.proj-count{font-size:11px;color:var(--muted);}
+.worker-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:0.5px solid var(--border);}
+.qty-row{display:flex;align-items:center;gap:6px;margin-top:6px;}
+.qty-inp{flex:1;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginPage">
+  <div class="login-box">
+    <div class="login-logo">
+      <i class="ti ti-building-warehouse"></i>
+      <div class="login-title">Гүйцэтгэл бүртгэл</div>
+      <div class="login-sub">Барилгын ажлын хяналт</div>
+    </div>
+    <div id="loginAlert"></div>
+    <div class="form-row">
+      <label>Имэйл</label>
+      <input type="email" id="loginEmail" placeholder="email@example.com"/>
+    </div>
+    <div class="form-row">
+      <label>Нууц үг</label>
+      <input type="password" id="loginPass" placeholder="Нууц үг"/>
+    </div>
+    <button class="btn btn-primary" onclick="doLogin()">
+      <i class="ti ti-login"></i> Нэвтрэх
+    </button>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="mainApp" class="hidden">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="av" id="topAv"></div>
+      <div>
+        <div class="uname" id="topName"></div>
+        <div class="urole" id="topRole"></div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:4px;">
+      <span id="pendingBadge" class="badge b-pend hidden"></span>
+      <button class="logout-btn" onclick="doLogout()"><i class="ti ti-logout" style="font-size:20px;"></i></button>
+    </div>
+  </div>
+
+  <div id="pageContent" class="page-content"></div>
+
+  <div class="bottom-nav" id="bottomNav"></div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://zlbanwygymbhsojsqgow.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpsYmFud3lneW1iaHNvanNxZ293Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc2MjM3NzIsImV4cCI6MjA2MzE5OTc3Mn0.1xk5jbePrzjEhlnT3CRdfpqaDseAGu1Zvbf2Yn_7yYk';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const WORK_TYPES=[
+  {name:'Тоосгон өрлөг 120мм',unit:'м²'},
+  {name:'Тоосгон өрлөг 240мм',unit:'м²'},
+  {name:'Блокон өрлөг',unit:'м²'},
+  {name:'Арматур',unit:'кг'},
+  {name:'Мужаан',unit:'м²'},
+  {name:'Дотор мужаан',unit:'м²'},
+  {name:'Обой',unit:'м²'},
+  {name:'Шал',unit:'м²'},
+  {name:'Дотор хавтан',unit:'м²'},
+];
+
+let STATE={user:null,profile:null,tab:'home',entries:[],projects:[],notifs:[],qtyInputs:{}};
+let channel=null;
+
+async function doLogin(){
+  const email=document.getElementById('loginEmail').value;
+  const pass=document.getElementById('loginPass').value;
+  const {data,error}=await sb.auth.signInWithPassword({email,password:pass});
+  if(error){showLoginErr('Имэйл эсвэл нууц үг буруу байна.');return;}
+  STATE.user=data.user;
+  await loadProfile();
+  startApp();
+}
+
+async function loadProfile(){
+  const {data}=await sb.from('profiles').select('*').eq('id',STATE.user.id).single();
+  STATE.profile=data;
+}
+
+function startApp(){
+  document.getElementById('loginPage').classList.add('hidden');
+  document.getElementById('mainApp').classList.remove('hidden');
+  const p=STATE.profile;
+  const initials=p.name.split(' ').map(n=>n[0]).join('').slice(0,2);
+  document.getElementById('topAv').textContent=initials;
+  document.getElementById('topAv').className='av '+(p.role==='engineer'?'av-e':'av-w');
+  document.getElementById('topName').textContent=p.name;
+  document.getElementById('topRole').textContent=p.role==='engineer'?'Инженер':'Ажилтан';
+  setupNav();
+  fetchAll();
+  setupRealtime();
+}
+
+function setupNav(){
+  const nav=document.getElementById('bottomNav');
+  const isEng=STATE.profile.role==='engineer';
+  const tabs=isEng?[
+    {id:'home',icon:'ti-home',label:'Нүүр'},
+    {id:'pending',icon:'ti-clock',label:'Зөвшөөрөх'},
+    {id:'approved',icon:'ti-check',label:'Зөвшөөрсөн'},
+    {id:'report',icon:'ti-chart-bar',label:'Тайлан'},
+  ]:[
+    {id:'submit',icon:'ti-plus',label:'Оруулах'},
+    {id:'mylist',icon:'ti-list',label:'Жагсаалт'},
+    {id:'notifs',icon:'ti-bell',label:'Мэдэгдэл'},
+  ];
+  nav.innerHTML=tabs.map(t=>`
+    <button class="nav-item${STATE.tab===t.id?' active':''}" onclick="switchTab('${t.id}')" id="nav-${t.id}">
+      <i class="ti ${t.icon}"></i>${t.label}
+    </button>`).join('');
+  STATE.tab=tabs[0].id;
+}
+
+function switchTab(t){
+  STATE.tab=t;
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+  const nb=document.getElementById('nav-'+t);
+  if(nb) nb.classList.add('active');
+  render();
+}
+
+async function fetchAll(){
+  await Promise.all([fetchEntries(),fetchProjects(),fetchNotifs()]);
+  render();
+}
+
+async function fetchEntries(){
+  let q=sb.from('entries').select('*,profiles(name),projects(name)').order('created_at',{ascending:false});
+  if(STATE.profile.role==='worker') q=q.eq('worker_id',STATE.user.id);
+  const {data}=await q;
+  if(data) STATE.entries=data;
+}
+
+async function fetchProjects(){
+  const {data}=await sb.from('projects').select('*').order('name');
+  if(data) STATE.projects=data;
+}
+
+async function fetchNotifs(){
+  const {data}=await sb.from('notifications').select('*').eq('user_id',STATE.user.id).order('created_at',{ascending:false});
+  if(data) STATE.notifs=data;
+  updateNotifBadge();
+}
+
+function updateNotifBadge(){
+  const unread=STATE.notifs.filter(n=>!n.is_read).length;
+  const pending=STATE.entries.filter(e=>e.status==='pending');
+  const pb=document.getElementById('pendingBadge');
+  if(STATE.profile.role==='engineer'&&pending.length>0){
+    pb.textContent=pending.length+' хүлээгдэж буй';pb.classList.remove('hidden');
+  } else if(STATE.profile.role==='worker'&&unread>0){
+    pb.textContent=unread;pb.classList.remove('hidden');
+  } else pb.classList.add('hidden');
+}
+
+function setupRealtime(){
+  if(channel) sb.removeChannel(channel);
+  channel=sb.channel('app-changes')
+    .on('postgres_changes',{event:'*',schema:'public',table:'entries'},()=>{fetchEntries().then(()=>{render();updateNotifBadge();})})
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'notifications',filter:`user_id=eq.${STATE.user.id}`},()=>{fetchNotifs().then(render);})
+    .subscribe();
+}
+
+function render(){
+  const t=STATE.tab;
+  const p=STATE.profile;
+  if(p.role==='worker'){
+    if(t==='submit') renderSubmit();
+    else if(t==='mylist') renderMyList();
+    else renderNotifs();
+  } else {
+    if(t==='home') renderHome();
+    else if(t==='pending') renderPending();
+    else if(t==='approved') renderApproved();
+    else renderReport();
+  }
+  updateNotifBadge();
+}
+
+function renderSubmit(){
+  const c=document.getElementById('pageContent');
+  const today=new Date().toISOString().split('T')[0];
+  c.innerHTML=`
+    <div id="alertBox"></div>
+    <div class="card">
+      <div class="card-title">Өдрийн гүйцэтгэл оруулах</div>
+      <div class="form-row"><label>Огноо</label><input type="date" id="fDate" value="${today}"/></div>
+      <div class="form-row"><label>Төсөл</label>
+        <select id="fProj">${STATE.projects.map(p=>`<option value="${p.id}">${p.name}</option>`).join('')}</select>
+      </div>
+      <div class="form-row"><label>Ажлын төрөл</label>
+        <select id="fType" onchange="updateUnit()">${WORK_TYPES.map(w=>`<option value="${w.name}">${w.name}</option>`).join('')}</select>
+      </div>
+      <div class="form-row"><label>Хэмжих нэгж</label><input type="text" id="fUnit" readonly value="${WORK_TYPES[0].unit}"/></div>
+      <div class="form-row"><label>Тайлбар</label><input type="text" id="fNote" placeholder="Ажлын дэлгэрэнгүй..."/></div>
+      <button class="btn btn-primary" onclick="submitEntry()"><i class="ti ti-send"></i> Гүйцэтгэл илгээх</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Сүүлийн гүйцэтгэл</div>
+      ${STATE.entries.slice(0,5).map(entryHTML).join('')||'<div style="color:var(--hint);font-size:13px;text-align:center;padding:1rem;">Гүйцэтгэл байхгүй</div>'}
+    </div>`;
+}
+
+function updateUnit(){
+  const s=document.getElementById('fType');
+  const w=WORK_TYPES.find(w=>w.name===s.value);
+  document.getElementById('fUnit').value=w?w.unit:'';
+}
+
+async function submitEntry(){
+  const date=document.getElementById('fDate').value;
+  const proj=document.getElementById('fProj').value;
+  const type=document.getElementById('fType').value;
+  const note=document.getElementById('fNote').value;
+  const w=WORK_TYPES.find(w=>w.name===type);
+  const {error}=await sb.from('entries').insert({worker_id:STATE.user.id,project_id:proj,work_type:type,unit:w.unit,note,date,status:'pending'});
+  if(error){showAlert('Алдаа: '+error.message,'e');return;}
+  showAlert('Амжилттай илгээгдлээ! Инженерийн зөвшөөрлийг хүлээнэ үү.','s');
+  document.getElementById('fNote').value='';
+  await fetchEntries();
+  renderSubmit();
+}
+
+function renderMyList(){
+  const c=document.getElementById('pageContent');
+  c.innerHTML=STATE.entries.length===0
+    ?'<div style="text-align:center;padding:3rem;color:var(--hint);"><i class="ti ti-clipboard-list" style="font-size:36px;display:block;margin-bottom:8px;"></i>Гүйцэтгэл байхгүй</div>'
+    :`<div class="card">${STATE.entries.map(entryHTML).join('')}</div>`;
+}
+
+function entryHTML(e){
+  return `<div class="entry">
+    <div class="entry-top">
+      <div>
+        <div class="entry-name">${e.work_type}</div>
+        <div class="entry-meta">${e.projects?.name||''} · ${e.date}</div>
+        ${e.note?`<div style="font-size:11px;color:var(--hint);">${e.note}</div>`:''}
+      </div>
+      <div style="text-align:right;flex-shrink:0;">
+        <span class="badge b-${e.status==='approved'?'appr':e.status==='rejected'?'rej':'pend'}">
+          <i class="ti ti-${e.status==='approved'?'check':e.status==='rejected'?'x':'clock'}"></i>
+          ${e.status==='approved'?'Зөвшөөрсөн':e.status==='rejected'?'Татгалзсан':'Хүлээгдэж байна'}
+        </span>
+        ${e.qty!=null?`<div style="font-size:14px;font-weight:700;color:var(--purple);margin-top:4px;">${e.qty} ${e.unit}</div>`:''}
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderNotifs(){
+  const c=document.getElementById('pageContent');
+  sb.from('notifications').update({is_read:true}).eq('user_id',STATE.user.id).eq('is_read',false).then(()=>fetchNotifs());
+  c.innerHTML=STATE.notifs.length===0
+    ?'<div style="text-align:center;padding:3rem;color:var(--hint);"><i class="ti ti-bell" style="font-size:36px;display:block;margin-bottom:8px;"></i>Мэдэгдэл байхгүй</div>'
+    :`<div class="card">${STATE.notifs.map(n=>`
+      <div style="display:flex;gap:10px;padding:10px 0;border-bottom:0.5px solid var(--border);">
+        <div style="width:30px;height:30px;border-radius:50%;background:${n.type==='approved'?'#EAF3DE':'#FCEBEB'};color:${n.type==='approved'?'#27500A':'#791F1F'};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <i class="ti ti-${n.type==='approved'?'check':'x'}"></i>
+        </div>
+        <div>
+          <div style="font-size:13px;">${n.message}</div>
+          <div style="font-size:11px;color:var(--hint);margin-top:2px;">${new Date(n.created_at).toLocaleString('mn-MN')}</div>
+        </div>
+      </div>`).join('')}</div>`;
+}
+
+function renderHome(){
+  const pending=STATE.entries.filter(e=>e.status==='pending');
+  const approved=STATE.entries.filter(e=>e.status==='approved');
+  const today=new Date().toISOString().split('T')[0];
+  const todayApproved=approved.filter(e=>e.approved_at&&e.approved_at.startsWith(today));
+  const c=document.getElementById('pageContent');
+  let html=`
+    <div class="stats-row">
+      <div class="stat"><div class="stat-val" style="color:var(--purple);">${new Set(STATE.entries.map(e=>e.worker_id)).size}</div><div class="stat-lbl">Ажилтан</div></div>
+      <div class="stat"><div class="stat-val" style="color:#BA7517;">${pending.length}</div><div class="stat-lbl">Хүлээгдэж буй</div></div>
+      <div class="stat"><div class="stat-val" style="color:var(--teal);">${todayApproved.length}</div><div class="stat-lbl">Өнөөдөр</div></div>
+    </div>`;
+
+  STATE.projects.forEach(proj=>{
+    const pe=STATE.entries.filter(e=>e.project_id===proj.id);
+    if(!pe.length) return;
+    const workers={};
+    pe.forEach(e=>{
+      const n=e.profiles?.name||'?';
+      if(!workers[n]) workers[n]={pend:0,appr:0,types:new Set(),wid:e.worker_id};
+      workers[n][e.status==='approved'?'appr':'pend']++;
+      workers[n].types.add(e.work_type);
+    });
+    html+=`<div class="card">
+      <div class="proj-header">
+        <i class="ti ti-building"></i>
+        <div class="proj-title">${proj.name}</div>
+        <div class="proj-count">${Object.keys(workers).length} ажилтан</div>
+      </div>
+      ${Object.entries(workers).map(([name,d])=>`
+        <div class="worker-row">
+          <div class="av av-w" style="width:30px;height:30px;font-size:11px;">${name.split(' ').map(n=>n[0]).join('').slice(0,2)}</div>
+          <div style="flex:1;">
+            <div style="font-size:13px;font-weight:600;">${name}</div>
+            <div style="font-size:11px;color:var(--muted);">${[...d.types].slice(0,2).join(', ')}${d.types.size>2?` +${d.types.size-2}`:''}</div>
+          </div>
+          <div style="display:flex;gap:5px;">
+            ${d.pend>0?`<span class="badge b-pend"><i class="ti ti-clock"></i>${d.pend}</span>`:''}
+            ${d.appr>0?`<span class="badge b-appr"><i class="ti ti-check"></i>${d.appr}</span>`:''}
+          </div>
+        </div>`).join('')}
+    </div>`;
+  });
+
+  if(!STATE.entries.length) html+='<div style="text-align:center;padding:3rem;color:var(--hint);font-size:14px;"><i class="ti ti-users" style="font-size:36px;display:block;margin-bottom:8px;"></i>Ажилтнуудын гүйцэтгэл байхгүй</div>';
+  c.innerHTML=html;
+}
+
+function renderPending(){
+  const pending=STATE.entries.filter(e=>e.status==='pending');
+  const c=document.getElementById('pageContent');
+  c.innerHTML='<div id="alertBox"></div>'+(pending.length===0
+    ?'<div style="text-align:center;padding:3rem;color:var(--hint);"><i class="ti ti-check" style="font-size:36px;display:block;margin-bottom:8px;"></i>Хүлээгдэж буй гүйцэтгэл байхгүй</div>'
+    :`<div class="card">${pending.map(e=>`
+      <div class="entry" id="erow-${e.id}">
+        <div class="entry-name">${e.work_type}</div>
+        <div class="entry-meta"><span class="badge b-work">${e.profiles?.name}</span> · ${e.projects?.name} · ${e.date}</div>
+        ${e.note?`<div style="font-size:11px;color:var(--hint);margin-top:2px;">${e.note}</div>`:''}
+        <div class="qty-row">
+          <input class="qty-inp" type="number" min="0" step="0.1" placeholder="${e.unit}" id="qty-${e.id}"/>
+          <span style="font-size:12px;color:var(--muted);">${e.unit}</span>
+          <button class="btn-sm btn-green" onclick="approveEntry('${e.id}','${e.worker_id}','${e.work_type}','${e.unit}')">
+            <i class="ti ti-check"></i>Зөвшөөрөх
+          </button>
+          <button class="btn-sm btn-red-outline" onclick="rejectEntry('${e.id}','${e.worker_id}','${e.work_type}')">Татгалзах</button>
+        </div>
+      </div>`).join('')}</div>`);
+}
+
+async function approveEntry(id,wid,wtype,unit){
+  const inp=document.getElementById('qty-'+id);
+  const qty=parseFloat(inp.value);
+  if(isNaN(qty)||qty<=0){inp.style.border='1.5px solid var(--red)';setTimeout(()=>inp.style.border='',1500);return;}
+  await sb.from('entries').update({status:'approved',qty,approved_by:STATE.user.id,approved_at:new Date().toISOString()}).eq('id',id);
+  await sb.from('notifications').insert({user_id:wid,message:`"${wtype}" ажлын ${qty} ${unit} гүйцэтгэл зөвшөөрөгдлөө.`,type:'approved'});
+  await fetchEntries();
+  showAlert('Гүйцэтгэл зөвшөөрөгдлөө.','s');
+  renderPending();
+}
+
+async function rejectEntry(id,wid,wtype){
+  await sb.from('entries').delete().eq('id',id);
+  await sb.from('notifications').insert({user_id:wid,message:`"${wtype}" ажлын гүйцэтгэл татгалзагдлаа.`,type:'rejected'});
+  await fetchEntries();
+  renderPending();
+}
+
+function renderApproved(){
+  const approved=STATE.entries.filter(e=>e.status==='approved');
+  const c=document.getElementById('pageContent');
+  let html=`<div class="stats-row">
+    <div class="stat"><div class="stat-val">${approved.length}</div><div class="stat-lbl">Нийт</div></div>
+    <div class="stat"><div class="stat-val">${new Set(approved.map(e=>e.worker_id)).size}</div><div class="stat-lbl">Ажилтан</div></div>
+    <div class="stat"><div class="stat-val">${new Set(approved.map(e=>e.project_id)).size}</div><div class="stat-lbl">Төсөл</div></div>
+  </div>`;
+  html+=approved.length===0
+    ?'<div style="text-align:center;padding:2rem;color:var(--hint);font-size:14px;">Зөвшөөрсөн гүйцэтгэл байхгүй</div>'
+    :`<div class="card">${approved.map(e=>`
+      <div class="entry">
+        <div class="entry-top">
+          <div>
+            <div class="entry-name">${e.work_type}</div>
+            <div class="entry-meta"><span class="badge b-work">${e.profiles?.name}</span> · ${e.projects?.name} · ${e.date}</div>
+          </div>
+          <div style="font-size:15px;font-weight:700;color:var(--purple);flex-shrink:0;">${e.qty} ${e.unit}</div>
+        </div>
+      </div>`).join('')}</div>`;
+  c.innerHTML=html;
+}
+
+function renderReport(){
+  const c=document.getElementById('pageContent');
+  const period=STATE.reportPeriod||'week';
+  const approved=STATE.entries.filter(e=>e.status==='approved');
+  const now=new Date();
+  let filtered=approved;
+  if(period==='week'){const d=new Date(now);d.setDate(now.getDate()-7);filtered=approved.filter(e=>new Date(e.date)>=d);}
+  else if(period==='month'){const d=new Date(now);d.setDate(now.getDate()-30);filtered=approved.filter(e=>new Date(e.date)>=d);}
+  const byType={};filtered.forEach(e=>{byType[e.work_type]=(byType[e.work_type]||0)+(parseFloat(e.qty)||0);});
+  const maxQ=Math.max(1,...Object.values(byType));
+  const byW={};filtered.forEach(e=>{const n=e.profiles?.name||'?';if(!byW[n])byW[n]=0;byW[n]++;});
+  c.innerHTML=`
+    <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;">
+      ${[['week','7 хоног'],['month','30 хоног'],['all','Бүгд']].map(([p,l])=>`
+        <button onclick="STATE.reportPeriod='${p}';renderReport();" style="padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;border:none;cursor:pointer;${period===p?'background:var(--purple);color:#fff;':'background:#fff;color:#1a1a1a;border:0.5px solid var(--border);'}">${l}</button>`).join('')}
+    </div>
+    <div class="stats-row">
+      <div class="stat"><div class="stat-val">${filtered.length}</div><div class="stat-lbl">Гүйцэтгэл</div></div>
+      <div class="stat"><div class="stat-val">${Object.keys(byW).length}</div><div class="stat-lbl">Ажилтан</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Ажлын төрлөөр</div>
+      ${Object.entries(byType).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`
+        <div class="bar-wrap">
+          <div class="bar-lbl"><span>${k}</span><span style="font-weight:600;color:#1a1a1a;">${(Math.round(v*10)/10).toFixed(1)}</span></div>
+          <div class="bar-bg"><div class="bar-fill" style="width:${Math.round(v/maxQ*100)}%"></div></div>
+        </div>`).join('')||'<div style="color:var(--hint);font-size:13px;">Өгөгдөл байхгүй</div>'}
+    </div>
+    <div class="card">
+      <div class="card-title">Ажилтнаар</div>
+      ${Object.entries(byW).map(([n,cnt])=>`
+        <div class="worker-row">
+          <div class="av av-w" style="width:30px;height:30px;font-size:11px;">${n.split(' ').map(x=>x[0]).join('').slice(0,2)}</div>
+          <div style="flex:1;font-size:13px;font-weight:600;">${n}</div>
+          <div style="font-size:16px;font-weight:700;color:var(--purple);">${cnt} <span style="font-size:11px;color:var(--muted);font-weight:400;">бичлэг</span></div>
+        </div>`).join('')||'<div style="color:var(--hint);font-size:13px;">Өгөгдөл байхгүй</div>'}
+    </div>`;
+}
+
+function showAlert(msg,type){
+  const b=document.getElementById('alertBox');
+  if(!b) return;
+  b.innerHTML=`<div class="alert alert-${type}">${msg}</div>`;
+  setTimeout(()=>{if(b)b.innerHTML='';},3500);
+}
+
+function showLoginErr(msg){
+  const b=document.getElementById('loginAlert');
+  b.innerHTML=`<div class="alert alert-e" style="margin-bottom:10px;">${msg}</div>`;
+}
+
+async function doLogout(){
+  await sb.auth.signOut();
+  STATE={user:null,profile:null,tab:'home',entries:[],projects:[],notifs:[],qtyInputs:{}};
+  document.getElementById('mainApp').classList.add('hidden');
+  document.getElementById('loginPage').classList.remove('hidden');
+}
+
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('loginPass')===document.activeElement)doLogin();});
+
+sb.auth.getSession().then(({data:{session}})=>{
+  if(session){STATE.user=session.user;loadProfile().then(startApp);}
+});
+</script>
+</body>
 </html>
